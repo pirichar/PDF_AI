@@ -120,3 +120,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* 
+@font-face {
+  font-family: 'My Custom Font'; 
+  src: url('/fonts/myfont-regular.otf') format('opentype'); 
+  font-weight: normal; 
+  font-style: normal;  
+}
+
+
+body {
+  font-family: 'My Custom Font', sans-serif;
+}*/
