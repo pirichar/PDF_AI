@@ -51,7 +51,7 @@ export async function POST(request: NextRequest){
 									What should the reader remember from this document? Max 2 senteces
 
 									Format the response with clear headings and well-structured paragraphs. 
-									Use professional, concise language throughout.
+									Use professional, concise language throughout. Oh and all the text shall be in french.
 
 									Document content: 
 									${processedText}

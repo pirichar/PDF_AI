@@ -85,7 +85,6 @@ export default function DashboardContent(){
 		}
 	},[selectedFile])
 
-	//TODO: FormatSummaryContent function
 	const formatSummaryContent = (text: string) =>{
 		const paragraphs = text.split('\n').filter(p => p.trim() !== '')
 
