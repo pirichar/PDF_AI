@@ -4,9 +4,11 @@ import { useState, useCallback, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
 import { useRouter, useSearchParams } from "next/navigation"
 import { CheckCircle, FileText, AlertCircle, Loader, Calendar, Info, Search } from "lucide-react"
+import { ExtractTextFromPDF } from "@/lib/pdfUtils"
 
 export default function DashboardContent(){
 	const {user, isLoaded} = useUser();
+
 
 	/**
 	 * Router for navigation and search paramas to accces URL query parameters
@@ -49,7 +51,6 @@ export default function DashboardContent(){
 		setSelectedFile(e.target.files[0])
 	}
 
-	//TODO: HandleAnalyse Function
 	const HandleAnalyse = useCallback(async() =>{
 		if (!selectedFile){
 			setError("Please set a file before analyzing.")
@@ -59,10 +60,24 @@ export default function DashboardContent(){
 		setError('');
 		setSummary('');
 		try{
-			//TODO : Extract text from PDF File
-			const text = ''
-			//TODO : Send the extracted text to API for analysis
-			const response = ''
+			const text = await ExtractTextFromPDF(selectedFile);
+
+			const response = await fetch('/api/analyze',{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify({text: text.substring(0, 100000)})
+			})
+			if (!response.ok){
+				const errorData = await response.json().catch(()=>{})
+				throw new Error(errorData.error || `HTTP error! status : ${response.status}`)
+			}
+			const data = await response.json()
+
+			setSummary(data.summary || 'No summary was generated.')
+		
 		} catch (err){
 			setError(err instanceof Error ? err.message : 'Failed to analyze PDF.')
 		} finally{
@@ -71,11 +86,39 @@ export default function DashboardContent(){
 	},[selectedFile])
 
 	//TODO: FormatSummaryContent function
+	const formatSummaryContent = (text: string) =>{
+		const paragraphs = text.split('\n').filter(p => p.trim() !== '')
+
+		return paragraphs.map((paragraph, index) =>{
+			if (paragraph.startsWith('# ')){
+				return (
+					<h2 key={index} className="text-2xl font-bold mt-6 mb-4 bg-gradient-to-r from-purple-400 to-pink-500
+											bg-clip-text text-transparent">
+						{paragraph.replace(/^# /m,'')}
+					</h2>
+				)
+			}
+			if (paragraph.startsWith('## ')){
+				return(
+					<h3 key={index} className="text-xl font-semibold mt-6 mb-3 text-purple-300 border-purple-500/20 pb-2">
+						{paragraph.replace(/^## /m,'')}
+					</h3>
+				)
+			}
+			return(
+				<p key={index} className="mb-4 text-gray-300 leading-relaxed hover:text-white transition-colors
+											first-letter:text-lg first-letter:font-medium">
+					{paragraph}
+				</p>
+			)
+
+		})
+	}
+
 	return(
 		<>
 			<div className="space-y-10 mt-24 max-w-4xl mx-auto">
 				{/* Conditional rendering */}
-				{/* TODO REMOVE THE ! */}
 				{showPaymentSucces && (
 					<div className='bg-green-500/10 max-w-xl mx-auto my-8 border border-green-500/20 rounded-xl p-4 text-green-400'>
 						<div className='flex items-center justify-center'>
@@ -96,6 +139,7 @@ export default function DashboardContent(){
 						<div className="border border-gray-700 rounded-xl p-1 bg-black/40 hover:border-purple-200/20 transition-colors">
 							<input
 								type="file"
+								onChange={handleFileChange}
 								accept=".pdf"
 								className="block w-full text-gray-300 file:mr-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:text-sm
 										file:font-medium file:bg-purple-200/20 file:text-purple-200 hover:file:bg-purple-200/20 transition-all
@@ -103,7 +147,9 @@ export default function DashboardContent(){
 							/>
 						</div>
 					</div>
+					{/* Analyze button */}
 					<button
+						onClick={HandleAnalyse}
 						disabled={!selectedFile  || isLoading}
 						className="group relative inline-flex items-center justify-center w-full gap-2 rounded-xl bg-black px-4 py-4
 								text-white transition-all hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -131,7 +177,7 @@ export default function DashboardContent(){
 				)}
 
 				{/* Summary result - Only Shown when therre's a summary  */}
-				{!summary && (
+				{summary && (
 					<div className="bg-black/20 shadow-[0_4px_20px_-10px] shadow-purple-200/30 rounded-2xl p-8 border border-[#2A2A35]">
 						{/* Summary header */}
 						<div className="flex items-center mb-6">
@@ -141,7 +187,7 @@ export default function DashboardContent(){
 						</div>
 						{/* Formatted summary conntent */}
 						<div className="max-w-none px-6 py-5 rounded-xl bg-[#0f0f13] border border-[#2A2A35]">
-							xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+						{formatSummaryContent(summary)}
 						</div>
 					</div>
 				)}
