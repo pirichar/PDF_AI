@@ -17,7 +17,7 @@ const NavBar = () =>{
 	}
 
 	return(
-		<nav className="border-b border-purple-300/5 shadow-[0_4px_20px_-10px shadow-purple-200/300">
+		<nav className="border-b border-purple-300/5 shadow-[0_4px_20px_-10px] shadow-purple-200/30">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				 {/* Desktop Navigation and Mobile Menu Icon*/}
 				<div className="flex items-center justify-between h-20">
@@ -30,7 +30,7 @@ const NavBar = () =>{
 							Dashboard
 						</Link>
 
-						<Link href="/dashboard" className="text-white/70 hover:text-white px-4 py-2 transition=all duration-300
+						<Link href="/pricing" className="text-white/70 hover:text-white px-4 py-2 transition=all duration-300
 														hover:shadow-[0_2px_8px_0] hover:shadow-purple-400/40 hover:rounded-md">
 							Pricing
 						</Link>
