@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { SignedIn, SignedOut, SignInButton, SignOutButton } from "@clerk/nextjs"
+import { SignedIn, SignedOut, SignOutButton } from "@clerk/nextjs"
 import { Menu, X } from "lucide-react"
-import { use, useState } from "react"
+import { useState } from "react"
 
 const NavBar = () =>{
 	const [isOpen, setIsOpen] = useState(false);

@@ -1,13 +1,11 @@
 'use client'
 
 import { useState, useCallback, useEffect } from "react"
-import { useUser } from "@clerk/nextjs"
 import { useRouter, useSearchParams } from "next/navigation"
-import { CheckCircle, FileText, AlertCircle, Loader, Calendar, Info, Search } from "lucide-react"
+import { CheckCircle, FileText, AlertCircle} from "lucide-react"
 import { ExtractTextFromPDF } from "@/lib/pdfUtils"
 
 export default function DashboardContent(){
-	const {user, isLoaded} = useUser();
 
 
 	/**

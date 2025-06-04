@@ -1,0 +1,51 @@
+
+> pdf_ai_analysis@0.1.0 build
+> prisma generate && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v6.8.2) to ./node_modules/@prisma/client in 41ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+
+   ▲ Next.js 15.3.2
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 1000ms
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/11) ...
+   Generating static pages (2/11) 
+   Generating static pages (5/11) 
+   Generating static pages (8/11) 
+ ✓ Generating static pages (11/11)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    2.13 kB         107 kB
+├ ○ /_not-found                            978 B         102 kB
+├ ƒ /api/analyze                           142 B         101 kB
+├ ƒ /api/webhooks/clerk                    142 B         101 kB
+├ ƒ /api/webhooks/stripe                   142 B         101 kB
+├ ƒ /dashboard                           3.73 kB         105 kB
+├ ○ /payment/cancelled                   1.43 kB         106 kB
+├ ○ /payment/success                     1.45 kB         106 kB
+├ ƒ /pricing                               172 B         105 kB
+├ ƒ /sign-in/[[...sign-in]]                305 B         128 kB
+└ ƒ /sign-up/[[...sign-up]]                307 B         128 kB
++ First Load JS shared by all             101 kB
+  ├ chunks/4bd1b696-2dae8b75cfab9578.js  53.2 kB
+  ├ chunks/684-2ec614a4d6954b5b.js         46 kB
+  └ other shared chunks (total)          2.03 kB
+
+
+ƒ Middleware                             75.4 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
