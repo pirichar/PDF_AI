@@ -1,9 +1,8 @@
-
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
-import { prisma }  from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(req: Request) {
   const body = await req.text()
@@ -32,6 +31,9 @@ export async function POST(req: Request) {
       case 'invoice.payment_succeeded':
         await handlePaymentSucceeded(event.data.object as Stripe.Invoice)
         break
+
+      default:
+        console.warn(`Unhandled event type: ${event.type}`)
     }
 
     return NextResponse.json({ received: true }, { status: 200 })
@@ -59,115 +61,67 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       subscription: {
         upsert: {
           create: mapSubscriptionData(subscription),
-          update: mapSubscriptionData(subscription),
-        },
-      },
-    },
+          update: mapSubscriptionData(subscription)
+        }
+      }
+    }
   })
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const firstItem = subscription.items.data[0]
+
   await prisma.subscription.update({
     where: { stripeSubscriptionId: subscription.id },
     data: {
       status: subscription.status,
-      currentPeriodStart: new Date(subscription.items.data[0].current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.items.data[0].current_period_end * 1000),
-      interval: subscription.items.data[0].plan.interval,
-      planId: subscription.items.data[0].plan.id,
-    },
+      currentPeriodStart: new Date(firstItem.current_period_start * 1000),
+      currentPeriodEnd: new Date(firstItem.current_period_end * 1000),
+      interval: firstItem.plan.interval,
+      planId: firstItem.plan.id
+    }
   })
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   await prisma.subscription.delete({
-    where: { stripeSubscriptionId: subscription.id },
+    where: { stripeSubscriptionId: subscription.id }
   })
 }
 
-// async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
-//   const subscription = await stripe.subscriptions.retrieve(
-//     invoice.subscription as string
-//   )
-//   await prisma.subscription.update({
-//     where: { stripeSubscriptionId: subscription.id },
-//     data: {
-//       currentPeriodStart: new Date(subscription.items.data[0].current_period_start * 1000),
-//       currentPeriodEnd: new Date(subscription.items.data[0].current_period_end * 1000),
-//     },
-//   })
-// }
-
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
-  // 1. Address TypeScript error for 'invoice.subscription':
-  //    Access 'subscription' using '(invoice as any).subscription'.
-  //    This tells TypeScript to trust that this property exists.
-  const subscriptionProperty = (invoice as any).subscription;
+  let subscriptionId: string | null = null
 
-  // 2. Ensure 'subscriptionProperty' is valid and extract the ID string.
-  //    The original 'as string' cast was unsafe if 'subscriptionProperty' wasn't a string.
-  let subscriptionIdToRetrieve: string | undefined;
-
-  if (typeof subscriptionProperty === 'string') {
-    subscriptionIdToRetrieve = subscriptionProperty;
-  } else if (subscriptionProperty && typeof subscriptionProperty.id === 'string') {
-    // Handles cases where 'subscriptionProperty' might be an expanded Subscription object
-    subscriptionIdToRetrieve = subscriptionProperty.id;
+  if ('subscription' in invoice && invoice.subscription) {
+    subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : (invoice.subscription as Stripe.Subscription)?.id || null
   }
 
-  // 3. If a valid subscription ID could not be obtained, log an error and exit.
-  if (!subscriptionIdToRetrieve) {
-    console.error(
-      `Could not retrieve a valid subscription ID from invoice ${invoice.id}. ` +
-      `The 'subscription' property was: ${JSON.stringify(subscriptionProperty)}`
-    );
-    // It's crucial to log the actual 'invoice' object if this happens often:
-    // console.log('Full invoice object for debugging:', JSON.stringify(invoice, null, 2));
-    return;
+  if (!subscriptionId) {
+    console.warn('No subscription Id found in invoice')
+    return
   }
 
-  // 4. Retrieve the subscription using the determined ID.
-  const subscription = await stripe.subscriptions.retrieve(
-    subscriptionIdToRetrieve
-  );
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+  const firstItem = subscription.items.data[0]
 
-  // 5. Your existing Prisma update logic, with added safety for item access.
-  //    This assumes 'subscription.items.data[0]' and its period properties exist and are numbers.
-  const firstItem = subscription.items?.data?.[0];
-
-  if (
-    firstItem &&
-    typeof (firstItem as any).current_period_start === 'number' && // Using 'as any' if types for item are also problematic
-    typeof (firstItem as any).current_period_end === 'number'
-  ) {
-    await prisma.subscription.update({
-      where: { stripeSubscriptionId: subscription.id },
-      data: {
-        currentPeriodStart: new Date((firstItem as any).current_period_start * 1000),
-        currentPeriodEnd: new Date((firstItem as any).current_period_end * 1000),
-      },
-    });
-  } else {
-    console.error(
-      `Subscription ${subscription.id} could not be updated with period dates. ` +
-      `The first subscription item or its 'current_period_start'/'current_period_end' properties were missing, null, or not numbers.`
-    );
-    // Consider if you want to update other fields (like status) even if period dates can't be set.
-    // For example:
-    // await prisma.subscription.update({
-    //   where: { stripeSubscriptionId: subscription.id },
-    //   data: { status: subscription.status },
-    // });
-  }
+  await prisma.subscription.update({
+    where: { stripeSubscriptionId: subscription.id},
+    data: {
+      currentPeriodStart: new Date(firstItem.current_period_start * 1000),
+      currentPeriodEnd: new Date(firstItem.current_period_end * 1000)
+    }
+  })
 }
 
 function mapSubscriptionData(subscription: Stripe.Subscription) {
+  const firstItem = subscription.items.data[0]
+
   return {
     stripeSubscriptionId: subscription.id,
     status: subscription.status,
-    currentPeriodStart: new Date(subscription.items.data[0].current_period_start * 1000),
-    currentPeriodEnd: new Date(subscription.items.data[0].current_period_end * 1000),
-    interval: subscription.items.data[0].plan.interval,
-    planId: subscription.items.data[0].plan.id,
+    currentPeriodStart: new Date(firstItem.current_period_start * 1000),
+    currentPeriodEnd: new Date(firstItem.current_period_end * 1000),
+    interval: firstItem.plan.interval,
+    planId: firstItem.plan.id
   }
 }
