@@ -21,7 +21,7 @@ const NavBar = () =>{
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				 {/* Desktop Navigation and Mobile Menu Icon*/}
 				<div className="flex items-center justify-between h-20">
-					<Link href="/" className="text-2xl font-bold text-white">
+					<Link href="/" className="text-2xl font-bold text-white z-150">
 						PDFtoolAI
 					</Link>
 					<div className="hidden md:flex items-center space-x-4">
@@ -71,7 +71,7 @@ const NavBar = () =>{
 				</div>
 					
 				{/* Mobile Menu Navigation */}
-				<div className="md:hidden fixed inset-0 z-40">
+				<div className={`md:hidden fixed inset-0  ${isOpen ? "z-40" : "z-0"}`}>
 					<div className={`absolute inset-0 backdrop-blur-xl transition-opacity duration-300
 						${isOpen ? "opacity-100" : "opacity-0"}`} onClick={closeMenu}/ >
 
